@@ -92,10 +92,10 @@ Mixed-integer optimization uses the ranges Hydrophilicity = 0.5-1.2, Sigma = 1.3
 Using the provided data and scripts, the mixed-integer optimum is reproduced as:
 
 ```text
-Hydrophilicity = 0.6554406
+Hydrophilicity = 0.6554
 Charge          = -2 e
-Sigma           = 4.2608138 A
-ln(Selectivity) = 3.2269394
+Sigma           = 4.2608 A
+ln(Selectivity) = 3.2269
 ```
 
 ## Notes
