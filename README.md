@@ -26,6 +26,4 @@ The C++ counters use Windows memory mapping. PMF simulation inputs require a LAM
 
 The Release contains 239 complete simulation input folders, plus four auxiliary trajectory-replay inputs: 243 `.in`, 239 `.data` and 18 `.colvars` files. Ordinary simulation folders contain the input script and coordinates; each of the 18 PMF folders also contains its colvars configuration. Simulation logs and restarts are omitted.
 
-The paper's original 196-row training table remains in `revision/ml/data.csv`. Recounts agree with 194 rows; the S112/S119 differences are documented separately without replacing the paper's labels.
-
 See [revision/README.md](revision/README.md) for the directory overview. The data packages retain the scientific results; this release does not imply that complete MD or ML training was rerun during packaging.
