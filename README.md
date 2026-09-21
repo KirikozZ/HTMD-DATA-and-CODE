@@ -9,7 +9,7 @@ The main workflow is MD simulation and event counting, ML training and validatio
 Download the ZIP files from [Releases](https://github.com/KirikozZ/HTMD-DATA-and-CODE/releases):
 
 - `Revision_Reproducibility_Data.zip`: matching simulation inputs, screening event series, saved ML results, optimization results and microscopic data. Extract it at this repository root so its `revision/` directory merges with the code.
-- `Supplementary_Source_Data.zip`: manuscript and SI figure source files and screening summary tables. Extract separately to browse the supplied source data.
+- `Supplementary_Source_Data.zip`: manuscript and SI figure source files. Extract separately to browse the supplied source data.
 
 ## Run
 

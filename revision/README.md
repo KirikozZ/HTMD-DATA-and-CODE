@@ -35,7 +35,7 @@ python -X utf8 revision/run.py compile --work work/main
 labels. Main ML results use seed 42; repeated-seed results retain seeds 42–46.
 
 Final main-text and SI figure source files are in `Supplementary_Source_Data.zip`.
-Its figure index is a data lookup, not a code dependency. Internal script
+The supplement contains the 45 original figure source files. Internal script
 inventories and machine-specific source paths are not part of this code release.
 
 The analysis scripts follow the author's main calculation chain. The simulation
