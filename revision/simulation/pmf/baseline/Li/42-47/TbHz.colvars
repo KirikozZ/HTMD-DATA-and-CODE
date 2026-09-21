@@ -1,0 +1,34 @@
+#colvarsTrajFrequency      100
+#colvarsRestartFrequency   1000
+
+#analysis                  on
+
+colvar {
+   name Translocation
+
+   width 0.1
+
+   lowerboundary   0
+   upperboundary   87.576096
+
+   distanceZ {
+      main {atomnumbers { 6337 }}
+      ref  { dummyAtom ( 0.0, 0.0, 0.0 ) }        # 参考点：z=0
+      axis ( 0.0, 0.0, 1.0 )
+   #  z 方向是周期边界，避免最小镜像导致“跳到[-Lz/2,Lz/2]”
+      forceNoPBC yes      
+   }
+}
+
+harmonic {
+  colvars Translocation
+  centers 42
+  targetCenters 47
+  targetNumsteps 10000000
+  targetNumStages 5
+  forceconstant 0.06
+  outputCenters on
+  #outputEnergy  on
+  #outputAccumulatedWork on
+}
+

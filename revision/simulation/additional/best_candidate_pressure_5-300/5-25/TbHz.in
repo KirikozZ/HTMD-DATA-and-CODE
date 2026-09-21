@@ -1,0 +1,109 @@
+# Run multiple independent pressure cases from the same TbHz.data file.
+# Put this input file in the same directory as TbHz.data before running it.
+
+# Edit this line to set the pressure cases, in MPa.
+# variable          pressure index 5 25 50 100 200 300
+variable          pressure index 5 25
+
+label             pressure_loop
+
+# Remove the preceding case completely. The index variable survives clear,
+# allowing next/jump below to select and launch the next pressure case.
+clear
+
+# Open a separate log before initialization and minimization of this case.
+log               log.${pressure}MPa.lammps
+print             "Starting independent pressure case = ${pressure} MPa"
+
+units             real
+atom_style        full
+boundary          p p p
+
+pair_style        lj/cut/coul/long 10.0 12.0
+pair_modify       mix arithmetic
+bond_style        harmonic
+angle_style       harmonic
+dihedral_style    charmm
+improper_style    harmonic
+kspace_style      pppm 1.0e-4
+
+# Every pressure case independently starts from this same data file.
+read_data         TbHz.data
+
+region            lt block EDGE EDGE EDGE EDGE EDGE 39.803101
+region            rt block EDGE EDGE EDGE EDGE 53.043098 EDGE
+region            memb block EDGE EDGE EDGE EDGE 39.803101 53.043098
+region            pump block EDGE EDGE EDGE EDGE 10 20
+region            tot block EDGE EDGE EDGE EDGE EDGE EDGE
+
+group cof         type 1 2 3
+group water       type 4 5
+group ow          type 4
+group hw          type 5
+group li          type 6
+group cl          type 7
+group mg          type 8
+group liquid      type 4 5 6 7 8
+group freeze      type 1 2 3
+
+neighbor          2.0 bin
+
+compute           watertemp water temp/region memb
+compute           all_temp liquid temp/com
+
+variable          mw  equal count(ow,memb)
+variable          mli equal count(li,memb)
+variable          mcl equal count(cl,memb)
+variable          mmg equal count(mg,memb)
+
+# thermo_style custom requires an equal-style variable.  This alias captures
+# the current numeric value of the index-style pressure loop variable.
+variable          pressure_thermo equal ${pressure}
+
+# Convert the current pressure into per-atom forces applied in pump.
+variable          fw  equal v_pressure*0.108091375/(count(ow,pump)+6.941/16*count(li,pump)+35.4527/16*count(cl,pump)+24.305/16*count(mg,pump))
+variable          fli equal 6.941/16*v_fw
+variable          fcl equal 35.4527/16*v_fw
+variable          fmg equal 24.305/16*v_fw
+
+timestep          1.0
+
+# ---------------------------- Minimization ----------------------------
+thermo            10
+thermo_style      custom step cpu etotal
+thermo_modify     flush yes
+fix               freeze_min freeze setforce 0.0 0.0 0.0
+minimize          1.0e-5 1.0e-5 1000 1000
+unfix             freeze_min
+
+# All cases use the same random seed, hence the same initial velocities.
+velocity          liquid create 300.0 1491119213 mom yes rot yes dist gaussian
+
+thermo            1000
+thermo_style      custom step cpu c_watertemp c_all_temp v_pressure_thermo v_fw v_mw v_mli v_mcl v_mmg
+thermo_modify     flush yes
+
+fix               1 water shake 1e-5 2000 0 b 5 a 8
+fix               2 ow addforce 0.0 0.0 v_fw region pump
+fix               4 li addforce 0.0 0.0 v_fli region pump
+fix               5 cl addforce 0.0 0.0 v_fcl region pump
+fix               6 mg addforce 0.0 0.0 v_fmg region pump
+fix               7 liquid nve
+fix               8 liquid temp/berendsen 300.0 300.0 100.0
+fix_modify        8 temp all_temp
+
+# -------------------------- Current pressure --------------------------
+dump              traj all custom 10000 trajectory.${pressure}MPa.lammpstrj id type x y z
+dump_modify       traj sort id
+restart           1000 restart.${pressure}MPa.1 restart.${pressure}MPa.2
+
+run               120000000
+
+write_restart     final.${pressure}MPa.restart
+restart           0
+undump            traj
+
+next              pressure
+jump              SELF pressure_loop
+
+print             "All independent pressure cases have finished."

@@ -1,0 +1,54 @@
+# ------------------ 1. 初始化与力场设置 (必须与原文件完全一致) ------------------
+units             real
+atom_style        full
+boundary          p p p
+ 
+pair_style        lj/cut/coul/long 10.0 12.0
+pair_modify       mix arithmetic
+bond_style        harmonic
+angle_style       harmonic
+dihedral_style    charmm
+improper_style    harmonic
+kspace_style      pppm 1.0e-4
+
+# 读取拓扑结构
+# 【重要修改提示】：如果你的 TbHz.data 不在每个 sim_ 文件夹里，而在上一级目录，请将其改为: read_data ../TbHz.data
+read_data         TbHz.data
+
+# ------------------ 2. 分组定义 (保留了你原始的分组) ------------------
+group cof         type 1 2 3
+group water       type 4 5
+group ow          type 4
+group hw          type 5
+group li          type 6
+group cl          type 7
+group mg          type 8
+# (去掉了原脚本中用于热浴和统计的 liquid 和 freeze 等与运动相关的 group)
+
+# ------------------ 3. 特征提取计算 (新增部分) ------------------
+
+# 【特征A】: 计算 COF 与 离子/水分子 的相互作用能
+compute           inter_Li cof group/group li
+compute           inter_Mg cof group/group mg
+compute           inter_Cl cof group/group cl
+compute           inter_water cof group/group water
+
+# 将每一帧读取到的相互作用能输出到 dat 文件 (注意这里必须写在一行)
+fix               out_energies all ave/time 1 1 1 c_inter_Li[1] c_inter_Li[2] c_inter_Mg[1] c_inter_Mg[2] c_inter_Cl[1] c_inter_Cl[2] c_inter_water[1] c_inter_water[2] file interaction_energies.dat
+
+# 【特征B】: 计算脱水合能垒 (Z 轴势能分布)
+compute           pe_atom all pe/atom
+# 沿 Z 轴按 0.5 埃的宽度进行切片
+compute           z_chunks all chunk/atom bin/1d z lower 0.5
+
+# "ave running overwrite" 表示对整个轨迹文件中的所有帧进行累加平均，最终覆盖输出一个结果分布图
+# 统计各个物种在各个切片区域的平均势能
+fix profile_Li li ave/chunk 1 1 1 z_chunks c_pe_atom file pe_profile_Li.dat ave running overwrite
+fix profile_Mg mg ave/chunk 1 1 1 z_chunks c_pe_atom file pe_profile_Mg.dat ave running overwrite
+fix profile_Cl cl ave/chunk 1 1 1 z_chunks c_pe_atom file pe_profile_Cl.dat ave running overwrite
+fix profile_water water ave/chunk 1 1 1 z_chunks c_pe_atom file pe_profile_water.dat ave running overwrite
+
+# ------------------ 4. 执行回放 (核心修改) ------------------
+# 使用 ${TRAJ_FILE} 接收 Python 脚本传递的变量名
+# 由于你原文件中 dump 输出的是 id type x y z，因此 rerun 也要按照这个格式读取
+rerun             ${TRAJ_FILE} dump x y z box yes

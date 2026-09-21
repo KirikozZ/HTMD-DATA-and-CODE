@@ -1,0 +1,9 @@
+{
+  "bootstrap_draws": 5000,
+  "seed": 20260917,
+  "block_ns": 10,
+  "independent_runs_per_case": 1,
+  "error_bars": "SD of block-bootstrap estimates (temporal SEM), not SD across independent trajectories",
+  "profile_dz_A": 0.49759145454545,
+  "residence_tau_ns": 1
+}

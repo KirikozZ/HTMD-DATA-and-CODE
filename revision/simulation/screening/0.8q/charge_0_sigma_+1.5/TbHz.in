@@ -1,0 +1,128 @@
+# Materials Studio Generated CAR File
+
+units             real
+atom_style        full
+boundary          p p p
+ 
+pair_style        lj/cut/coul/long 10.0 12.0
+pair_modify       mix arithmetic
+bond_style        harmonic
+angle_style       harmonic
+dihedral_style    charmm
+improper_style    harmonic
+kspace_style      pppm 1.0e-4
+
+read_data         TbHz.data
+
+#定义区域：进料侧lt、渗透侧rt、膜内memb、泵法施加压力区域pump
+region            lt block EDGE EDGE EDGE EDGE EDGE 39.803101
+region            rt block EDGE EDGE EDGE EDGE 53.043098 EDGE
+region            memb block EDGE EDGE EDGE EDGE 39.803101 53.043098
+region            pump block EDGE EDGE EDGE EDGE 10 20
+region            tot block EDGE EDGE EDGE EDGE EDGE EDGE
+
+group cof         type 1 2 3
+group water       type 4 5
+group ow          type 4
+group hw          type 5
+group li          type 6
+group cl          type 7
+group mg          type 8
+group liquid      type 4 5 6 7 8
+group freeze      type 1 2 3
+
+neighbor          2.0 bin
+
+compute           watertemp water temp/region memb
+compute           all_temp liquid temp/com
+
+#计算进料侧、膜内、渗透侧水分子、离子的数量
+variable          pw  equal  count(ow,pump)
+variable          pli equal  count(li,pump)
+variable          pcl equal  count(cl,pump)
+variable          pmg equal  count(mg,pump)
+variable          lw  equal  count(ow,lt)
+variable          lli equal  count(li,lt)
+variable          lcl equal  count(cl,lt)
+variable          lmg equal  count(mg,lt)
+variable          mw  equal  count(ow,memb)
+variable          mli equal  count(li,memb)
+variable          mcl equal  count(cl,memb)
+variable          mmg equal  count(mg,memb)
+variable          rw  equal  count(ow,rt)
+variable          rli equal  count(li,rt)
+variable          rcl equal  count(cl,rt)
+variable          rmg equal  count(mg,rt)
+
+#泵法施加压力
+variable          fw  equal  100*0.108091375/(count(ow,pump)+6.941/16*count(li,pump)+35.4527/16*count(cl,pump)+24.305/16*count(mg,pump))
+variable          fli equal  6.941/16*v_fw
+variable          fcl equal  35.4527/16*v_fw
+variable          fmg equal  24.305/16*v_fw
+
+#定义动态组：膜内离子、水分子，每1个timestep重复一次
+group inow        dynamic ow region memb every 1
+group inli        dynamic li region memb every 1
+group incl        dynamic cl region memb every 1
+group inmg        dynamic mg region memb every 1
+
+#计算膜内离子、水分子z方向的速度以及通量
+compute           vel_ow ow reduce ave vz
+compute           vel_li li reduce ave vz
+compute           vel_cl cl reduce ave vz
+compute           vel_mg mg reduce ave vz
+variable          flux_ow equal c_vel_ow*1872/lz
+variable          flux_li equal c_vel_li*30/lz
+variable          flux_cl equal c_vel_cl*88/lz
+variable          flux_mg equal c_vel_mg*29/lz
+fix               9 all ave/time 1 10000 10000 v_flux_ow v_flux_li v_flux_cl v_flux_mg file flux.dat
+
+#孔口筛分cin/c0，输出进料侧、膜内、渗透侧水分子、离子的数量，每1ps取平均值
+variable          clic0 equal (count(li,memb)/count(ow,memb))/(count(li,tot)/count(ow,tot))
+variable          cclc0 equal (count(cl,memb)/count(ow,memb))/(count(cl,tot)/count(ow,tot))
+variable          cmgc0 equal (count(mg,memb)/count(ow,memb))/(count(mg,tot)/count(ow,tot))
+fix               10 all ave/time 1 10000 10000 v_clic0 v_cclc0 v_cmgc0 file cinc0.dat
+
+#孔内传质vi/vw，每100步输出一次膜内所有离子、水分子z方向的速度之和以及膜内离子、水分子数量
+compute           vel_sumow inow reduce ave vz
+compute           vel_sumli inli reduce ave vz
+compute           vel_sumcl incl reduce ave vz
+compute           vel_summg inmg reduce ave vz
+variable          vel_sumow_value equal c_vel_sumow
+variable          vel_sumli_value equal c_vel_sumli
+variable          vel_sumcl_value equal c_vel_sumcl
+variable          vel_summg_value equal c_vel_summg
+fix               11 all ave/time 1 10000 10000 v_vel_sumow_value v_vel_sumli_value v_vel_sumcl_value v_vel_summg_value file vivw.dat
+# ----------------------------------------------------------------------
+restart           1000 restart.1 restart.2
+
+timestep          1.0
+
+# ---------------------------- Minimization ----------------------------
+thermo            10
+thermo_style      custom step cpu etotal
+thermo_modify     flush yes
+fix               freeze_min freeze setforce  0.0  0.0  0.0
+minimize          1.0e-5 1.0e-5 1000 1000
+# ---------------------------- Equilibrium -----------------------------
+unfix             freeze_min
+
+velocity          liquid create 300.0 1491119213 mom yes rot yes dist gaussian
+
+thermo 	          1000
+thermo_style      custom step cpu c_watertemp c_all_temp v_fw v_mw v_mli v_mcl v_mmg
+thermo_modify     flush yes
+
+dump              1 all custom 10000 equilibrium.lammpstrJ id type x y z
+dump_modify       1 sort id
+
+fix               1 water shake 1e-5 2000 0 b 5 a 8
+fix               2 ow addforce  0.0  0.0  v_fw  region pump
+fix               4 li addforce  0.0  0.0  v_fli region pump
+fix               5 cl addforce  0.0  0.0  v_fcl region pump
+fix               6 mg addforce  0.0  0.0  v_fmg region pump
+fix               7 liquid  nve
+fix               8 liquid  temp/berendsen 300.0 300.0 100.0
+fix_modify        8 temp all_temp
+
+run               120000000

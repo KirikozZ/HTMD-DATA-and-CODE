@@ -1,0 +1,51 @@
+[
+  {
+    "case": "00_optimized",
+    "H": 0.5691,
+    "Charge": -2,
+    "Sigma_A": 4.2143,
+    "job_id": "29314"
+  },
+  {
+    "case": "01_H_minus",
+    "H": 0.5191,
+    "Charge": -2,
+    "Sigma_A": 4.2143,
+    "job_id": "29315"
+  },
+  {
+    "case": "02_H_plus",
+    "H": 0.6191,
+    "Charge": -2,
+    "Sigma_A": 4.2143,
+    "job_id": "29316"
+  },
+  {
+    "case": "03_Charge_minus",
+    "H": 0.5691,
+    "Charge": -3,
+    "Sigma_A": 4.2143,
+    "job_id": "29317"
+  },
+  {
+    "case": "04_Charge_plus",
+    "H": 0.5691,
+    "Charge": -1,
+    "Sigma_A": 4.2143,
+    "job_id": "29318"
+  },
+  {
+    "case": "05_Sigma_minus",
+    "H": 0.5691,
+    "Charge": -2,
+    "Sigma_A": 4.1143,
+    "job_id": "29319"
+  },
+  {
+    "case": "06_Sigma_plus",
+    "H": 0.5691,
+    "Charge": -2,
+    "Sigma_A": 4.3143,
+    "job_id": "29320"
+  }
+]
