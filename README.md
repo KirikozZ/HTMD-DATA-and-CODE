@@ -13,6 +13,8 @@ Download the ZIP files from [Releases](https://github.com/KirikozZ/HTMD-DATA-and
 
 ## Run
 
+The simulations were performed using **LAMMPS (10 Sep 2025)**.
+
 Read [the workflow instructions](revision/WORKFLOW.md) for the Python environments and compiler requirements. After extracting the matching Release data:
 
 ```powershell
